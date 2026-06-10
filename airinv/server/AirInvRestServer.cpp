@@ -109,6 +109,25 @@ static void doSession (tcp::socket sock,
     const std::string target = req.target().to_string();
     const std::string& body  = req.body();
 
+    // CORS preflight: browsers send an OPTIONS request before a cross-origin
+    // POST with a JSON content type. Answer it directly with 204 + the allowed
+    // methods/headers so browser/SPA clients are not blocked. The actual
+    // requests still carry Access-Control-Allow-Origin (set below).
+    if (method == "OPTIONS") {
+      http::response<http::empty_body> res;
+      res.version (req.version());
+      res.result (http::status::no_content);
+      res.set (http::field::server, "AirInvRestServer/" PACKAGE_VERSION);
+      res.set (http::field::access_control_allow_origin, "*");
+      res.set (http::field::access_control_allow_methods, "GET, POST, OPTIONS");
+      res.set (http::field::access_control_allow_headers, "Content-Type");
+      res.set (http::field::access_control_max_age, "86400");
+      res.prepare_payload();
+      http::write (sock, res);
+      sock.shutdown (tcp::socket::shutdown_send);
+      return;
+    }
+
     const auto [statusCode, contentType, respBody] =
       handler.handle (method, target, body);
 
@@ -118,6 +137,8 @@ static void doSession (tcp::socket sock,
     res.set (http::field::server, "AirInvRestServer/" PACKAGE_VERSION);
     res.set (http::field::content_type, contentType);
     res.set (http::field::access_control_allow_origin, "*");
+    res.set (http::field::access_control_allow_methods, "GET, POST, OPTIONS");
+    res.set (http::field::access_control_allow_headers, "Content-Type");
     res.body() = respBody;
     res.prepare_payload();
 
