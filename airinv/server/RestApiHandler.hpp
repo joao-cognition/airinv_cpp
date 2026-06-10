@@ -7,6 +7,7 @@
 // STL
 #include <string>
 #include <tuple>
+#include <mutex>
 
 namespace AIRINV {
 
@@ -48,6 +49,14 @@ namespace AIRINV {
 
   private:
     AIRINV_Master_Service& _service;
+
+    /**
+     * Serialises access to the (non-thread-safe) AIRINV_Master_Service.
+     * The REST server dispatches each connection to its own thread, so every
+     * call into _service must hold this lock to avoid racing on the BOM tree.
+     * Mutable so it can be locked from the const handle() method.
+     */
+    mutable std::mutex _serviceMutex;
   };
 
 }

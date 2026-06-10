@@ -5,8 +5,10 @@
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <mutex>
 #include <algorithm>
 #include <cctype>
+#include <iomanip>
 // Boost
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -68,8 +70,33 @@ namespace {
     return ret;
   }
 
+  // Escape a string so it can be safely embedded inside a JSON string literal
+  // (handles quotes, backslashes and control characters per RFC 8259).
+  std::string jsonEscape (const std::string& src) {
+    std::ostringstream oss;
+    for (const unsigned char c : src) {
+      switch (c) {
+      case '"':  oss << "\\\""; break;
+      case '\\': oss << "\\\\"; break;
+      case '\b': oss << "\\b";  break;
+      case '\f': oss << "\\f";  break;
+      case '\n': oss << "\\n";  break;
+      case '\r': oss << "\\r";  break;
+      case '\t': oss << "\\t";  break;
+      default:
+        if (c < 0x20) {
+          oss << "\\u" << std::hex << std::setw (4) << std::setfill ('0')
+              << static_cast<int>(c);
+        } else {
+          oss << static_cast<char>(c);
+        }
+      }
+    }
+    return oss.str();
+  }
+
   std::string jsonError (const std::string& msg) {
-    return "{\"error\":\"" + msg + "\"}";
+    return "{\"error\":\"" + jsonEscape (msg) + "\"}";
   }
 
 }
@@ -86,6 +113,9 @@ namespace AIRINV {
   RestApiHandler::handle (const std::string& method,
                           const std::string& target,
                           const std::string& body) const {
+
+    // Serialise all access to the non-thread-safe AIRINV_Master_Service.
+    const std::lock_guard<std::mutex> lock (_serviceMutex);
 
     const std::string kJson = "application/json";
     const std::string kText = "text/plain";
@@ -167,9 +197,10 @@ namespace AIRINV {
         const stdair::ClassCode_T classCode = pt.get<std::string>("class_code");
         const stdair::PartySize_T partySize = pt.get<int>("party_size");
         const bool ok = _service.sell (segment, classCode, partySize);
+        const std::string escSeg = jsonEscape (segment);
         const std::string resp = ok
-          ? "{\"result\":\"sold\",\"segment\":\"" + segment + "\"}"
-          : "{\"result\":\"rejected\",\"segment\":\"" + segment + "\"}";
+          ? "{\"result\":\"sold\",\"segment\":\"" + escSeg + "\"}"
+          : "{\"result\":\"rejected\",\"segment\":\"" + escSeg + "\"}";
         return {200, kJson, resp};
       }
 
@@ -182,9 +213,10 @@ namespace AIRINV {
         const stdair::ClassCode_T classCode = pt.get<std::string>("class_code");
         const stdair::PartySize_T partySize = pt.get<int>("party_size");
         const bool ok = _service.cancel (segment, classCode, partySize);
+        const std::string escSeg = jsonEscape (segment);
         const std::string resp = ok
-          ? "{\"result\":\"cancelled\",\"segment\":\"" + segment + "\"}"
-          : "{\"result\":\"rejected\",\"segment\":\"" + segment + "\"}";
+          ? "{\"result\":\"cancelled\",\"segment\":\"" + escSeg + "\"}"
+          : "{\"result\":\"rejected\",\"segment\":\"" + escSeg + "\"}";
         return {200, kJson, resp};
       }
 

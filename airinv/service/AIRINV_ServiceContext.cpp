@@ -4,6 +4,10 @@
 // STL
 #include <cassert>
 #include <sstream>
+#include <version>
+#if defined(__cpp_lib_format)
+#include <format>
+#endif
 // AirInv
 #include <airinv/basic/BasConst_AIRINV_Service.hpp>
 #include <airinv/service/AIRINV_ServiceContext.hpp>
@@ -35,7 +39,7 @@ namespace AIRINV {
   
   // //////////////////////////////////////////////////////////////////////
   const std::string AIRINV_ServiceContext::shortDisplay() const {
-#if __has_include(<format>)
+#if defined(__cpp_lib_format)
     return std::format("AIRINV_ServiceContext[{}] -- Owns StdAir service: {}",
                        _airlineCode, _ownStdairService);
 #else

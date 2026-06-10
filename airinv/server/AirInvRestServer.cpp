@@ -18,6 +18,8 @@
 #include <fstream>
 #include <string>
 #include <thread>
+#include <atomic>
+#include <chrono>
 #include <iostream>
 // Boost
 #include <boost/program_options.hpp>
@@ -176,27 +178,54 @@ int main (int argc, char* argv[]) {
   net::io_context ioc {1};
   tcp::acceptor acceptor {ioc, {net::ip::make_address (addr), port}};
 
-  // Graceful shutdown on SIGINT/SIGTERM
+  // Graceful shutdown on SIGINT/SIGTERM: the handler closes the acceptor, which
+  // makes the blocking accept() below fail so the loop can exit cleanly.
   net::signal_set signals (ioc, SIGINT, SIGTERM);
   signals.async_wait ([&](const beast::error_code&, int) {
     acceptor.close();
   });
 
+  // The accept loop below uses a synchronous accept(), so the io_context is
+  // never run on this thread. Run it on a dedicated thread instead, otherwise
+  // the signal_set callback would never be dispatched and -- because Asio
+  // installs its own SIGINT/SIGTERM handlers -- the process would be unkillable
+  // except via SIGKILL.
+  std::thread iocThread ([&ioc]() { ioc.run(); });
+
   std::cout << "AirInvRestServer listening on http://"
             << addr << ":" << port << "/api/v1/health\n";
+
+  // Count in-flight sessions so we can wait for them to finish before the
+  // service objects (handler, airinvService) go out of scope at the end of
+  // main(); otherwise a still-running detached session would dereference
+  // freed memory.
+  std::atomic<int> activeSessions {0};
 
   // Accept loop (synchronous accept, dispatch session in thread)
   while (acceptor.is_open()) {
     try {
       tcp::socket sock {ioc};
       acceptor.accept (sock);
-      std::thread ([s = std::move (sock), &handler]() mutable {
+      ++activeSessions;
+      std::thread ([s = std::move (sock), &handler, &activeSessions]() mutable {
         doSession (std::move (s), handler);
+        --activeSessions;
       }).detach();
     } catch (const boost::system::system_error& e) {
       if (acceptor.is_open())
         std::cerr << "Accept error: " << e.what() << "\n";
     }
+  }
+
+  // Wait for any in-flight sessions to drain before destroying the service.
+  while (activeSessions.load() > 0) {
+    std::this_thread::sleep_for (std::chrono::milliseconds (10));
+  }
+
+  // Stop the io_context and join its thread.
+  ioc.stop();
+  if (iocThread.joinable()) {
+    iocThread.join();
   }
 
   std::cout << "Server stopped.\n";

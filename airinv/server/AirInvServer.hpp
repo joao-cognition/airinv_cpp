@@ -47,9 +47,8 @@ namespace AIRINV {
     
   private:
     // //////////// Constructors and Destructors /////////////////
-    /** Default constructors. */
+    /** Default constructor. */
     AirInvServer();
-    AirInvServer(const AirInvServer&);
 
     
   private:
