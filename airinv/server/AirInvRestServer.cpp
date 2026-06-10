@@ -20,6 +20,7 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <functional>
 #include <iostream>
 // Boost
 #include <boost/program_options.hpp>
@@ -174,26 +175,17 @@ int main (int argc, char* argv[]) {
   // REST handler
   AIRINV::RestApiHandler handler (airinvService);
 
-  // Start Beast acceptor
+  // Start Beast acceptor.
+  //
+  // The acceptor and the signal_set are both driven exclusively by this single
+  // io_context, which is run on the main thread (ioc.run() below). Keeping every
+  // operation on the acceptor (async_accept) and the shutdown (acceptor.close()
+  // from the signal handler) on the same single-threaded io_context avoids the
+  // data race that a synchronous accept() on one thread + close() on another
+  // would otherwise create (Boost.Asio: a socket/acceptor is not safe for
+  // concurrent use).
   net::io_context ioc {1};
   tcp::acceptor acceptor {ioc, {net::ip::make_address (addr), port}};
-
-  // Graceful shutdown on SIGINT/SIGTERM: the handler closes the acceptor, which
-  // makes the blocking accept() below fail so the loop can exit cleanly.
-  net::signal_set signals (ioc, SIGINT, SIGTERM);
-  signals.async_wait ([&](const beast::error_code&, int) {
-    acceptor.close();
-  });
-
-  // The accept loop below uses a synchronous accept(), so the io_context is
-  // never run on this thread. Run it on a dedicated thread instead, otherwise
-  // the signal_set callback would never be dispatched and -- because Asio
-  // installs its own SIGINT/SIGTERM handlers -- the process would be unkillable
-  // except via SIGKILL.
-  std::thread iocThread ([&ioc]() { ioc.run(); });
-
-  std::cout << "AirInvRestServer listening on http://"
-            << addr << ":" << port << "/api/v1/health\n";
 
   // Count in-flight sessions so we can wait for them to finish before the
   // service objects (handler, airinvService) go out of scope at the end of
@@ -201,31 +193,44 @@ int main (int argc, char* argv[]) {
   // freed memory.
   std::atomic<int> activeSessions {0};
 
-  // Accept loop (synchronous accept, dispatch session in thread)
-  while (acceptor.is_open()) {
-    try {
-      tcp::socket sock {ioc};
-      acceptor.accept (sock);
+  // Graceful shutdown on SIGINT/SIGTERM: close the acceptor, which completes the
+  // pending async_accept with operation_aborted, so the io_context drains and
+  // ioc.run() returns. This runs on the io_context thread, same as the acceptor.
+  net::signal_set signals (ioc, SIGINT, SIGTERM);
+  signals.async_wait ([&](const beast::error_code&, int) {
+    beast::error_code ec;
+    acceptor.close (ec);
+  });
+
+  // Recursive asynchronous accept loop. Each accepted connection is handed off
+  // to its own detached worker thread running the synchronous doSession(); the
+  // loop then re-arms itself. All acceptor access stays on the io_context thread.
+  std::function<void()> doAccept;
+  doAccept = [&]() {
+    acceptor.async_accept ([&](const beast::error_code& ec, tcp::socket sock) {
+      if (ec) {
+        // operation_aborted on shutdown (acceptor closed), or a genuine error.
+        return;
+      }
       ++activeSessions;
       std::thread ([s = std::move (sock), &handler, &activeSessions]() mutable {
         doSession (std::move (s), handler);
         --activeSessions;
       }).detach();
-    } catch (const boost::system::system_error& e) {
-      if (acceptor.is_open())
-        std::cerr << "Accept error: " << e.what() << "\n";
-    }
-  }
+      doAccept();
+    });
+  };
+  doAccept();
+
+  std::cout << "AirInvRestServer listening on http://"
+            << addr << ":" << port << "/api/v1/health\n";
+
+  // Run the io_context on the main thread until the acceptor is closed.
+  ioc.run();
 
   // Wait for any in-flight sessions to drain before destroying the service.
   while (activeSessions.load() > 0) {
     std::this_thread::sleep_for (std::chrono::milliseconds (10));
-  }
-
-  // Stop the io_context and join its thread.
-  ioc.stop();
-  if (iocThread.joinable()) {
-    iocThread.join();
   }
 
   std::cout << "Server stopped.\n";

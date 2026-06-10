@@ -59,7 +59,8 @@ namespace {
       if (src[i] == '%' && i + 2 < src.size()) {
         const auto hi = src[i + 1];
         const auto lo = src[i + 2];
-        if (std::isxdigit (hi) && std::isxdigit (lo)) {
+        if (std::isxdigit (static_cast<unsigned char>(hi))
+            && std::isxdigit (static_cast<unsigned char>(lo))) {
           ret += static_cast<char>(std::stoi (src.substr (i + 1, 2), nullptr, 16));
           i += 2;
           continue;
