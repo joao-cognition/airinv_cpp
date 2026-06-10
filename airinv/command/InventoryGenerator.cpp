@@ -122,42 +122,29 @@ namespace AIRINV {
     // Iterate on the leg-dates
     stdair::Duration_T currentOffTime (0, 0, 0);
     stdair::AirportCode_T previousOffPoint;
-    const LegStructList_T& lLegList = iFlightPeriod._legList;
-    for (LegStructList_T::const_iterator itLeg = lLegList.begin();
-         itLeg != lLegList.end(); ++itLeg) {
-      const LegStruct& lLeg = *itLeg;
+    const auto& lLegList = iFlightPeriod._legList;
+    bool isFirstLeg = true;
+    for (const auto& lLeg : lLegList) {
 
       // Create the leg-branch of the flight-date BOM
       stdair::LegDate& lLegDate =
         createLegDate (*lFlightDate_ptr, iFlightDate, lLeg);
 
-      // TODO: Check that the boarding date/time of the next leg is greated
-      // than the off date/time of the current leg. Throw an exception
-      // otherwise.
-
-      // TODO: specify, in the schedule input file specifications, that the
-      // legs should be given in their natural order.
-      // Then, replace the assertion by a thrown exception.
-      //
-      // Check that the legs are given in their natural order. If the schedule
-      // input does not respect that assumption, the following assertion will
-      // fail.
-      if (itLeg != lLegList.begin()) {
+      // Check that the legs are given in their natural order.
+      if (!isFirstLeg) {
         const stdair::AirportCode_T& currentBoardingPoint =
           lLegDate.getBoardingPoint();
         assert (currentBoardingPoint == previousOffPoint);
       }
-        
+      isFirstLeg = false;
+
       // Set the local variable for the next iteration
       previousOffPoint = lLegDate.getOffPoint();
     }
 
     // Iterate on the segment structures
-    const SegmentStructList_T& lSegmentList = iFlightPeriod._segmentList;
-    for (SegmentStructList_T::const_iterator itSegment = lSegmentList.begin();
-         itSegment != lSegmentList.end(); ++itSegment) {
-      const SegmentStruct& lSegment = *itSegment;
-
+    const auto& lSegmentList = iFlightPeriod._segmentList;
+    for (const auto& lSegment : lSegmentList) {
       createSegmentDate (ioBomRoot, *lFlightDate_ptr, lSegment);
     }
 

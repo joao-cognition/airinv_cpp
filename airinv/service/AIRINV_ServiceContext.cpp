@@ -35,10 +35,15 @@ namespace AIRINV {
   
   // //////////////////////////////////////////////////////////////////////
   const std::string AIRINV_ServiceContext::shortDisplay() const {
+#if __has_include(<format>)
+    return std::format("AIRINV_ServiceContext[{}] -- Owns StdAir service: {}",
+                       _airlineCode, _ownStdairService);
+#else
     std::ostringstream oStr;
     oStr << "AIRINV_ServiceContext[" << _airlineCode
          << "] -- Owns StdAir service: " << _ownStdairService;
     return oStr.str();
+#endif
   }
 
   // //////////////////////////////////////////////////////////////////////

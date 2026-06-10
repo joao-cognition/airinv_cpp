@@ -6,6 +6,7 @@
 // //////////////////////////////////////////////////////////////////////
 // STL
 #include <map>
+#include <memory>
 // Boost
 #include <boost/shared_ptr.hpp>
 // StdAir
@@ -205,14 +206,39 @@ namespace AIRINV {
   };
   
   /**
+   * Smart-pointer compatibility layer.
+   *
+   * By default (legacy mode), the public service pointers are aliases on
+   * boost::shared_ptr, so that downstream repositories (e.g. simcrs_cpp,
+   * tvlsim_cpp) that store an AIRINV_Master_ServicePtr_T in their own service
+   * context keep building unchanged.
+   *
+   * Downstream consumers can migrate at their own pace to std::shared_ptr by
+   * compiling with -DAIRINV_USE_STD_SMART_PTR.
+   */
+#ifndef AIRINV_USE_STD_SMART_PTR
+  // Legacy mode --- boost::shared_ptr (default for backward compatibility)
+  /**
    * (Smart) Pointer on the AirInv (slave) service handler.
    */
   typedef boost::shared_ptr<AIRINV_Service> AIRINV_ServicePtr_T;
-  
+
   /**
    * (Smart) Pointer on the AirInv master service handler.
    */
   typedef boost::shared_ptr<AIRINV_Master_Service> AIRINV_Master_ServicePtr_T;
+#else
+  // Modern mode --- std::shared_ptr
+  /**
+   * (Smart) Pointer on the AirInv (slave) service handler.
+   */
+  typedef std::shared_ptr<AIRINV_Service> AIRINV_ServicePtr_T;
+
+  /**
+   * (Smart) Pointer on the AirInv master service handler.
+   */
+  typedef std::shared_ptr<AIRINV_Master_Service> AIRINV_Master_ServicePtr_T;
+#endif // AIRINV_USE_STD_SMART_PTR
   
   /**
    * Type defining a map of airline codes and the corresponding

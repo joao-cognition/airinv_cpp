@@ -8,7 +8,6 @@
 // Boost
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 // AirInv
@@ -22,8 +21,11 @@ namespace AIRINV {
   
 
   /** Represents a single connection from a client. */
-  class Connection : public boost::enable_shared_from_this<Connection>,
-                     private boost::noncopyable {
+  class Connection : public boost::enable_shared_from_this<Connection> {
+  public:
+    Connection (const Connection&) = delete;
+    Connection& operator= (const Connection&) = delete;
+
   public:
     // //////////// Constructors and Destructors /////////////////
     /** Constructor.
