@@ -6,8 +6,6 @@
 // //////////////////////////////////////////////////////////////////////
 // STL
 #include <string>
-// Boost
-#include <boost/noncopyable.hpp>
 // StdAir
 #include <stdair/stdair_basic_types.hpp>
 // AirInv
@@ -25,7 +23,11 @@ namespace AIRINV {
   struct Request;
 
   /// The common handler for all incoming requests.
-  class RequestHandler : private boost::noncopyable {
+  class RequestHandler {
+  public:
+    RequestHandler (const RequestHandler&) = delete;
+    RequestHandler& operator= (const RequestHandler&) = delete;
+
   public:
     // //////////// Constructors and Destructors /////////////////
     /** Constructor.

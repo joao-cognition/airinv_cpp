@@ -1471,6 +1471,13 @@ macro (init_build)
       set (CMAKE_CXX_FLAGS "-Wall -Werror")
 	endif (${RUN_GCOV} STREQUAL "ON")
   endif (NOT CMAKE_CXX_FLAGS)
+
+  ##
+  # Enforce the C++20 standard across all targets of the project.
+  set (CMAKE_CXX_STANDARD 20)
+  set (CMAKE_CXX_STANDARD_REQUIRED ON)
+  set (CMAKE_CXX_EXTENSIONS OFF)
+
   # Tell the source code the version of Boost (only once)
   if (NOT "${CMAKE_CXX_FLAGS}" MATCHES "-DBOOST_VERSION=")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_VERSION=${Boost_VERSION}")

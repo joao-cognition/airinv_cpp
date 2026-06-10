@@ -9,7 +9,6 @@
 #include <vector>
 // Boost
 #include <boost/asio.hpp>
-#include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 // StdAir
 #include <stdair/stdair_basic_types.hpp>
@@ -20,8 +19,12 @@
 namespace AIRINV {
 
   /** The top-level class of the AirInv server. */
-  class AirInvServer : private boost::noncopyable {
+  class AirInvServer {
   public:
+    // AirInvServer is non-copyable.
+    AirInvServer (const AirInvServer&) = delete;
+    AirInvServer& operator= (const AirInvServer&) = delete;
+
     // //////////// Constructors and Destructors /////////////////
     /** Constructor.
         <br>Construct the server to listen on the specified TCP address
@@ -44,9 +47,8 @@ namespace AIRINV {
     
   private:
     // //////////// Constructors and Destructors /////////////////
-    /** Default constructors. */
+    /** Default constructor. */
     AirInvServer();
-    AirInvServer(const AirInvServer&);
 
     
   private:

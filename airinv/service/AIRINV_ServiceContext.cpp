@@ -4,6 +4,10 @@
 // STL
 #include <cassert>
 #include <sstream>
+#include <version>
+#if defined(__cpp_lib_format)
+#include <format>
+#endif
 // AirInv
 #include <airinv/basic/BasConst_AIRINV_Service.hpp>
 #include <airinv/service/AIRINV_ServiceContext.hpp>
@@ -35,10 +39,17 @@ namespace AIRINV {
   
   // //////////////////////////////////////////////////////////////////////
   const std::string AIRINV_ServiceContext::shortDisplay() const {
+#if defined(__cpp_lib_format)
+    // Use {:d} so the bool formats as 0/1, matching the ostringstream
+    // fallback below (operator<< without std::boolalpha prints 1/0).
+    return std::format("AIRINV_ServiceContext[{}] -- Owns StdAir service: {:d}",
+                       _airlineCode, _ownStdairService);
+#else
     std::ostringstream oStr;
     oStr << "AIRINV_ServiceContext[" << _airlineCode
          << "] -- Owns StdAir service: " << _ownStdairService;
     return oStr.str();
+#endif
   }
 
   // //////////////////////////////////////////////////////////////////////

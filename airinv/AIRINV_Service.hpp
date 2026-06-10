@@ -184,8 +184,9 @@ namespace AIRINV {
      * @param const stdair::PartySize_T& Party size
      * @return bool Whether or not the sale was successfull
      */
-    bool sell (const std::string& iSegmentDateKey, const stdair::ClassCode_T&,
-               const stdair::PartySize_T&);
+    [[nodiscard]] bool sell (const std::string& iSegmentDateKey,
+                             const stdair::ClassCode_T&,
+                             const stdair::PartySize_T&);
 
     /**
      * Register a booking.
@@ -194,7 +195,8 @@ namespace AIRINV {
      * @param const stdair::PartySize_T& Party size
      * @return bool Whether or not the sale was successfull
      */
-    bool sell (const stdair::BookingClassID_T&, const stdair::PartySize_T&);
+    [[nodiscard]] bool sell (const stdair::BookingClassID_T&,
+                             const stdair::PartySize_T&);
 
     /**
      * Register a cancellation.
@@ -205,8 +207,9 @@ namespace AIRINV {
      * @param const stdair::PartySize_T& Party size
      * @return bool Whether or not the cancellation was successfull
      */
-    bool cancel (const std::string& iSegmentDateKey, const stdair::ClassCode_T&,
-                 const stdair::PartySize_T&);
+    [[nodiscard]] bool cancel (const std::string& iSegmentDateKey,
+                               const stdair::ClassCode_T&,
+                               const stdair::PartySize_T&);
 
     /**
      * Register a cancellation.
@@ -215,7 +218,8 @@ namespace AIRINV {
      * @param const stdair::PartySize_T& Party size
      * @return bool Whether or not the cancellation was successfull
      */
-    bool cancel (const stdair::BookingClassID_T&, const stdair::PartySize_T&);
+    [[nodiscard]] bool cancel (const stdair::BookingClassID_T&,
+                               const stdair::PartySize_T&);
 
     /**
      * Take inventory snapshots.
@@ -242,7 +246,7 @@ namespace AIRINV {
      * @return std::string Output string in which the asking objects are
      *         logged/dumped in a JSon format.
      */
-    std::string jsonHandler (const stdair::JSONString&) const;
+    [[nodiscard]] std::string jsonHandler (const stdair::JSONString&) const;
 
     /**
      * Recursively dump, in the returned string and in JSON format,
@@ -256,8 +260,9 @@ namespace AIRINV {
      *        dates should be displayed. If set to 0 (the default),
      *        all the flight numbers will be displayed.
      */
-    std::string jsonExportFlightDateList (const stdair::AirlineCode_T& iAirlineCode = "all",
-					  const stdair::FlightNumber_T& iFlightNumber = 0) const;
+    [[nodiscard]] std::string jsonExportFlightDateList (
+        const stdair::AirlineCode_T& iAirlineCode = "all",
+        const stdair::FlightNumber_T& iFlightNumber = 0) const;
     /**
      * Recursively dump, in the returned string and in JSON format,
      * the flight-date corresponding to the parameters given as input.
@@ -268,9 +273,10 @@ namespace AIRINV {
      * @param const stdair::Date_T& Departure date of the flight to dump.
      * @return std::string Output string in which the BOM tree is JSON-ified.
      */
-    std::string jsonExportFlightDateObjects (const stdair::AirlineCode_T&,
-					     const stdair::FlightNumber_T&,
-					     const stdair::Date_T& iDepartureDate) const;
+    [[nodiscard]] std::string jsonExportFlightDateObjects (
+        const stdair::AirlineCode_T&,
+        const stdair::FlightNumber_T&,
+        const stdair::Date_T& iDepartureDate) const;
 
   public:
     // //////////////// Display support methods /////////////////
@@ -287,8 +293,9 @@ namespace AIRINV {
      * @return std::string Output string in which the BOM tree is
      *        logged/dumped.
      */
-    std::string list (const stdair::AirlineCode_T& iAirlineCode = "all",
-                      const stdair::FlightNumber_T& iFlightNumber = 0) const;
+    [[nodiscard]] std::string list (
+        const stdair::AirlineCode_T& iAirlineCode = "all",
+        const stdair::FlightNumber_T& iFlightNumber = 0) const;
 
     /**
      * Check whether the given flight-date is a valid one.
@@ -309,7 +316,7 @@ namespace AIRINV {
      * @return std::string Output string in which the BOM tree is
      *        logged/dumped.
      */
-    std::string csvDisplay() const;
+    [[nodiscard]] std::string csvDisplay() const;
 
     /**
      * Recursively display (dump in the returned string) the flight-date
@@ -322,9 +329,9 @@ namespace AIRINV {
      * @return std::string Output string in which the BOM tree is
      *        logged/dumped.
      */
-    std::string csvDisplay (const stdair::AirlineCode_T&,
-                            const stdair::FlightNumber_T&,
-                            const stdair::Date_T& iDepartureDate) const;
+    [[nodiscard]] std::string csvDisplay (const stdair::AirlineCode_T&,
+                                          const stdair::FlightNumber_T&,
+                                          const stdair::Date_T& iDepartureDate) const;
 
 
   private:

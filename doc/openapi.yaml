@@ -1,0 +1,225 @@
+openapi: "3.0.3"
+info:
+  title: AirInv REST API
+  version: "1.0.0"
+  description: |
+    REST interface to the AirInv airline inventory management library.
+    Wraps AIRINV_Master_Service methods as JSON/HTTP endpoints.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/flight-dates:
+    get:
+      summary: List flight dates
+      parameters:
+        - name: airline
+          in: query
+          schema:
+            type: string
+            default: all
+          description: Airline code (e.g. BA). Defaults to "all".
+        - name: flight
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Flight number. 0 means all.
+      responses:
+        "200":
+          description: JSON array of flight dates
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/flight-dates/{airline}/{flight}/{date}:
+    get:
+      summary: Get flight date objects
+      parameters:
+        - name: airline
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: flight
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2011-06-10"
+      responses:
+        "200":
+          description: Flight date detail in JSON
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/inventory/display:
+    get:
+      summary: CSV dump of the inventory
+      parameters:
+        - name: airline
+          in: query
+          schema:
+            type: string
+        - name: flight
+          in: query
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: CSV-formatted inventory display
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/v1/sell:
+    post:
+      summary: Register a booking (sell seats)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [segment, class_code, party_size]
+              properties:
+                segment:
+                  type: string
+                  description: Segment date key (e.g. "BA,9,2011-06-10,LHR,SYD")
+                class_code:
+                  type: string
+                  description: Booking class code (e.g. "Q")
+                party_size:
+                  type: integer
+                  description: Number of passengers
+            example:
+              segment: "BA,9,2011-06-10,LHR,SYD"
+              class_code: "Q"
+              party_size: 2
+      responses:
+        "200":
+          description: Sale result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    enum: [sold, rejected]
+                  segment:
+                    type: string
+
+  /api/v1/cancel:
+    post:
+      summary: Register a cancellation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [segment, class_code, party_size]
+              properties:
+                segment:
+                  type: string
+                class_code:
+                  type: string
+                party_size:
+                  type: integer
+      responses:
+        "200":
+          description: Cancellation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    enum: [cancelled, rejected]
+                  segment:
+                    type: string
+
+  /api/v1/availability:
+    post:
+      summary: Compute per-class availabilities for a travel solution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [segment]
+              properties:
+                segment:
+                  type: string
+                  description: Segment-date key, e.g. "BA,9,2011-06-10,LHR,SYD"
+      responses:
+        "200":
+          description: Computed availabilities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  segment:
+                    type: string
+                  availabilities:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: number
+                      description: Map of class code to available seats
+
+  /api/v1/json-command:
+    post:
+      summary: Pass a raw JSON command to the AirInv JSON handler
+      description: |
+        Backward-compatible with the existing ZeroMQ JSON interface.
+        Accepts any JSON command string and dispatches it internally.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: JSON response from the handler
+          content:
+            application/json:
+              schema:
+                type: object

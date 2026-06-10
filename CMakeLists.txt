@@ -1,5 +1,5 @@
 #
-cmake_minimum_required (VERSION 3.15..)
+cmake_minimum_required (VERSION 3.18)
 
 ##
 # CMake macros for the project
@@ -44,7 +44,7 @@ packaging_set_other_options (TBZ2 "TBZ2;TGZ")
 ##            Dependencies            ##
 ########################################
 #
-get_external_libs (git "boost 1.41" "mysql 5.0" "soci 3.0"
+get_external_libs (git "boost 1.66" "mysql 5.0" "soci 3.0"
         "zeromq 2.0" readline curses "doxygen 1.4" "gcov 4.6.3" "lcov 1.9"
         "stdair 1.00.0" "airrac 1.00.0" "rmol 1.00.0" "sevmgr 1.00.0")
 

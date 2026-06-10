@@ -28,4 +28,18 @@ module_binary_add (ui/cmdline airinv)
 module_binary_add (server AirInvServer)
 module_binary_add (server AirInvClient)
 
+##
+# REST API server (Boost.Beast-based, multi-source binary)
+add_executable (AirInvRestServerbin
+  server/AirInvRestServer.cpp
+  server/RestApiHandler.cpp)
+set_target_properties (AirInvRestServerbin
+  PROPERTIES OUTPUT_NAME AirInvRestServer)
+target_link_libraries (AirInvRestServerbin
+  ${PROJ_DEP_LIBS_FOR_BIN} ${MODULE_LIB_TARGET}
+  ${${MODULE_NAME}_INTER_TARGETS})
+install (TARGETS AirInvRestServerbin
+  EXPORT ${LIB_DEPENDENCY_EXPORT}
+  RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT runtime)
+
 
