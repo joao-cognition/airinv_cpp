@@ -239,10 +239,10 @@ namespace AIRINV {
       SEVMGR::SEVMGR_ServicePtr_T lSEVMGR_Service_ptr =
 	lAIRINV_Master_ServiceContext.getSEVMGR_ServicePtr();
       assert (lSEVMGR_Service_ptr != NULL);
-      lAIRINV_Service_ptr = boost::make_shared<AIRINV_Service> (lSTDAIR_Service_ptr, 
-								lSEVMGR_Service_ptr);
+      lAIRINV_Service_ptr = makeAirinvServicePtr (lSTDAIR_Service_ptr,
+						  lSEVMGR_Service_ptr);
     } else {
-      lAIRINV_Service_ptr = boost::make_shared<AIRINV_Service> (lSTDAIR_Service_ptr);
+      lAIRINV_Service_ptr = makeAirinvServicePtr (lSTDAIR_Service_ptr);
     }
     assert (lAIRINV_Service_ptr != NULL);
 
